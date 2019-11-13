@@ -142,7 +142,8 @@ namespace StudentExercisesMVC.Controllers
         // GET: Cohort/Delete/5
         public ActionResult Delete(int id)
         {
-            return View();
+            var cohort = GetById(id);
+            return View(cohort);
         }
 
         // POST: Cohort/Delete/5
@@ -152,13 +153,54 @@ namespace StudentExercisesMVC.Controllers
         {
             try
             {
-                // TODO: Add delete logic here
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"
+                            DELETE FROM Cohort WHERE CohortId = @id";
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
 
+                        cmd.ExecuteNonQuery();
+                    }
+                }
                 return RedirectToAction(nameof(Index));
             }
             catch
             {
-                return View();
+                var cohort = GetById(id);
+                return View(cohort);
+            }
+        }
+        //helper method private
+        private Cohort GetById(int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT Id, Name
+                                         FROM Cohort
+                                         WHERE Id = @id";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    Cohort cohort = null;
+                    if (reader.Read())
+                    {
+                        cohort = new Cohort()
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            Name = reader.GetString(reader.GetOrdinal("Name")),
+                        };
+                    }
+
+                    reader.Close();
+                    return cohort;
+
+                }
             }
         }
     }
