@@ -151,7 +151,7 @@ namespace StudentExercisesMVC.Controllers
                                             SET FirstName = @firstName,
                                                 LastName = @lastName,
                                                 SlackHandle = @slackHandle,
-                                                CohortId = @cohortId,
+                                                CohortId = @cohortId
                                             WHERE Id = @id";
                         cmd.Parameters.Add(new SqlParameter("@firstName", student.FirstName));
                         cmd.Parameters.Add(new SqlParameter("@lastName", student.LastName));
