@@ -102,35 +102,52 @@ namespace StudentExercisesMVC.Controllers
         // POST: Cohort/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
+        public async Task<ActionResult> Create(Cohort cohort)
         {
-            try
+            using (SqlConnection conn = Connection)
             {
-                // TODO: Add insert logic here
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"INSERT INTO Cohort
+                                        (Name)
+                                        VALUES ( @name)";
+                    cmd.Parameters.Add(new SqlParameter("@name", cohort.Name));
+                    cmd.ExecuteNonQuery();
 
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
+                    return RedirectToAction(nameof(Index));
+                }
             }
         }
 
         // GET: Cohort/Edit/5
         public ActionResult Edit(int id)
         {
-            return View();
+            var cohort = GetById(id);
+            return View(cohort);
         }
 
         // POST: Cohort/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
+        public ActionResult Edit(int id, Cohort cohort)
         {
             try
             {
-                // TODO: Add update logic here
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = cmd.CommandText = @"Update Cohort 
+                                                              SET Name = @name 
+                                                              WHERE id = @id";
+                        cmd.Parameters.Add(new SqlParameter("@name", cohort.Name));
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
 
+                        cmd.ExecuteNonQuery();
+                    }
+                }
                 return RedirectToAction(nameof(Index));
             }
             catch
