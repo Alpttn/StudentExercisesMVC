@@ -248,9 +248,9 @@ namespace StudentExercisesMVC.Controllers
 
         // POST: Students/Delete/5
         [HttpPost]
-        //[ActionName("Delete")] then rename to DeleteConfirmed
+        [ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
+        public ActionResult DeleteConfirmed(int id)
         {
             try
             {
@@ -271,8 +271,7 @@ namespace StudentExercisesMVC.Controllers
             }
             catch
             {
-                var student = GetStudentById(id);
-                return View(student);
+                return View();
             }
         }
         //helper method private
