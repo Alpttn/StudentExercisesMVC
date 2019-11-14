@@ -183,10 +183,15 @@ namespace StudentExercisesMVC.Controllers
         // GET: Students/Edit/5
         public ActionResult Edit(int id)
         {
+            var student = GetStudentById(id);
             var viewModel = new StudentEditViewModel()
             {
-                Student = GetStudentById(id),
-                Cohorts = GetAllCohorts()
+                //Student = GetStudentById(id),
+                Student = student,
+                Cohorts = GetAllCohorts(),
+                //AllExercises = GetAllExercises(), create this helper method below
+                //SelectedExerciseIds = GetStudentById(id).Exercises.Select(e => e.Id).ToList()
+                SelectedExerciseIds = student.ExerciseList.Select(e => e.Id).ToList()
             };
 
             return View(viewModel);
@@ -201,13 +206,14 @@ namespace StudentExercisesMVC.Controllers
             var updatedStudent = viewModel.Student;
             try
             {
-
                 using (SqlConnection conn = Connection)
                 {
                     conn.Open();
                     using (SqlCommand cmd = conn.CreateCommand())
                     {
                         cmd.CommandText = @"
+                            DELETE FROM StudentExercise WHERE StudentId = @id;
+
                             UPDATE Student 
                                SET FirstName = @firstName, 
                                    LastName = @lastName, 
@@ -222,9 +228,21 @@ namespace StudentExercisesMVC.Controllers
                         cmd.Parameters.Add(new SqlParameter("@cohortId", updatedStudent.CohortId));
 
                         cmd.ExecuteNonQuery();
+
+                        //took this outside of the loop below bc we only need to do this once
+                        cmd.CommandText = @"
+                                 INSERT INTO StudentExercise (StudentId, ExerciseId)
+                                    VALUES (@studentId, @exerciseId)";
+                        foreach(var exerciseId in viewModel.SelectedExerciseIds)
+                        {
+                            cmd.Parameters.Clear(); //delete the params
+                            cmd.Parameters.Add(new SqlParameter("@studentId", id));
+                            cmd.Parameters.Add(new SqlParameter("@exerciseId", exerciseId));
+
+                            cmd.ExecuteNonQuery();
+                        }
                     }
                 }
-
                 return RedirectToAction(nameof(Index));
             }
             catch
@@ -280,31 +298,48 @@ namespace StudentExercisesMVC.Controllers
             using (SqlConnection conn = Connection)
             {
                 conn.Open();
-                using (SqlCommand cmd = conn.CreateCommand())
+                using (SqlCommand cmd = conn.CreateCommand()) //add the new sql below
                 {
                     cmd.CommandText = @"SELECT s.Id, s.FirstName, s.LastName, s.SlackHandle, s.CohortId,
-                                                c.Name AS CohortName  
+                                                c.Name AS CohortName 
+                                                se.ExerciseId, e.Name AS ExerciseName, e.Language
                                          FROM Student s LEFT JOIN Cohort c ON s.CohortId = c.Id
+                                            LEFT JOIN StudentExercise
+                                            LEFT JOIN
                                          WHERE s.Id = @id";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
                     Student aStudent = null;
-                    if (reader.Read())
+                    while (reader.Read())
                     {
-                        aStudent = new Student()
+                        //we want to create this student one time
+                        if (aStudent == null)
                         {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                            SlackHandle = reader.GetString(reader.GetOrdinal("SlackHandle")),
-                            CohortId = reader.GetInt32(reader.GetOrdinal("CohortId")),
-                            Cohort = new Cohort()
+                            aStudent = new Student()
                             {
-                                Id = reader.GetInt32(reader.GetOrdinal("CohortId")),
-                                Name = reader.GetString(reader.GetOrdinal("CohortName")),
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                                SlackHandle = reader.GetString(reader.GetOrdinal("SlackHandle")),
+                                CohortId = reader.GetInt32(reader.GetOrdinal("CohortId")),
+                                Cohort = new Cohort()
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("CohortId")),
+                                    Name = reader.GetString(reader.GetOrdinal("CohortName")),
+                                }
+                            };
+                        }
+                        //make sure the student has an exercise, if i have an exercise in the db then add that exercise
+                        if (!reader.IsDBNull(reader.GetOrdinal("ExerciseId")))
+                        aStudent.ExerciseList.Add(
+                            new Exercise()
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("ExcerciseId")),
+                                Name = reader.GetString(reader.GetOrdinal("ExerciseName")),
+                                Language = reader.GetString(reader.GetOrdinal("Language")),
                             }
-                        };
+                            );
                     }
 
                     reader.Close();

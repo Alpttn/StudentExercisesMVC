@@ -22,16 +22,17 @@ namespace StudentExercisesMVC.Models.ViewModels
                     .ToList();
             }
         }
-        public IEnumerable<Exercise> Exercises { get; set; }
+        public IEnumerable<Exercise> AllExercises { get; set; } = new List<Exercise>();
+        public List<int> SelectedExerciseIds { get; set; } = new List<int>(); //whats in the db right now. 
 
         public List<SelectListItem> ExerciseOptions
         {
             get
             {
-                if (Exercises == null) return null;
+                if (AllExercises == null) return null;
 
-                return Exercises
-                    .Select(e => new SelectListItem(e.Name, e.Language.ToString()))
+                return AllExercises
+                    .Select(e => new SelectListItem($"{e.Name} ({e.Language})", e.Id.ToString()))
                     .ToList();
             }
         }
