@@ -150,16 +150,22 @@ namespace StudentExercisesMVC.Controllers
         // GET: Instructor/Edit/5
         public ActionResult Edit(int id)
         {
-            var instructor = GetById(id);
-            return View(instructor);
+            var viewModel = new InstructorEditViewModel()
+            {
+                Instructor = GetInstructorById(id),
+                Cohorts = GetAllCohorts()
+            };
+
+            return View(viewModel);
 
         }
 
         // POST: Instructor/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, Instructor instructor)
+        public ActionResult Edit(int id, InstructorEditViewModel viewModel)
         {
+            var updatedInstructor = viewModel.Instructor;
             try
             {
                 using (SqlConnection conn = Connection)
@@ -174,11 +180,11 @@ namespace StudentExercisesMVC.Controllers
                                                 Speciality = @speciality,
                                                 CohortId = @cohortId
                                             WHERE Id = @id";
-                        cmd.Parameters.Add(new SqlParameter("@firstName", instructor.FirstName));
-                        cmd.Parameters.Add(new SqlParameter("@lastName", instructor.LastName));
-                        cmd.Parameters.Add(new SqlParameter("@slackHandle", instructor.SlackHandle));
-                        cmd.Parameters.Add(new SqlParameter("@speciality", instructor.Speciality));
-                        cmd.Parameters.Add(new SqlParameter("@cohortId", instructor.CohortId));
+                        cmd.Parameters.Add(new SqlParameter("@firstName", updatedInstructor.FirstName));
+                        cmd.Parameters.Add(new SqlParameter("@lastName", updatedInstructor.LastName));
+                        cmd.Parameters.Add(new SqlParameter("@slackHandle", updatedInstructor.SlackHandle));
+                        cmd.Parameters.Add(new SqlParameter("@speciality", updatedInstructor.Speciality));
+                        cmd.Parameters.Add(new SqlParameter("@cohortId", updatedInstructor.CohortId));
                         cmd.Parameters.Add(new SqlParameter("@id", id));
 
                         cmd.ExecuteNonQuery();
@@ -188,14 +194,19 @@ namespace StudentExercisesMVC.Controllers
             }
             catch
             {
-                return View();
+                viewModel = new InstructorEditViewModel()
+                {
+                    Instructor = updatedInstructor,
+                    Cohorts = GetAllCohorts()
+                };
+                return View(viewModel);
             }
         }
 
         // GET: Instructor/Delete/5
         public ActionResult Delete(int id)
         {
-            var instructor = GetById(id);
+            var instructor = GetInstructorById(id);
             return View(instructor);
         }
 
@@ -224,12 +235,12 @@ namespace StudentExercisesMVC.Controllers
             }
             catch
             {
-                var instructor = GetById(id);
+                var instructor = GetInstructorById(id);
                 return View(instructor);
             }
         }
         //helper private method
-        private Instructor GetById(int id)
+        private Instructor GetInstructorById(int id)
         {
             using (SqlConnection conn = Connection)
             {
