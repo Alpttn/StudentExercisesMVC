@@ -22,5 +22,18 @@ namespace StudentExercisesMVC.Models.ViewModels
                     .ToList();
             }
         }
+        public IEnumerable<Exercise> Exercises { get; set; }
+
+        public List<SelectListItem> ExerciseOptions
+        {
+            get
+            {
+                if (Exercises == null) return null;
+
+                return Exercises
+                    .Select(e => new SelectListItem(e.Name, e.Language.ToString()))
+                    .ToList();
+            }
+        }
     }
 }
