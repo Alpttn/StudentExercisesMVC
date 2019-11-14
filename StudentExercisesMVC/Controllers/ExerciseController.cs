@@ -104,35 +104,55 @@ namespace StudentExercisesMVC.Controllers
         // POST: Exercise/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
+        public async Task<ActionResult> Create(Exercise exercise)
         {
-            try
+            using (SqlConnection conn = Connection)
             {
-                // TODO: Add insert logic here
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"INSERT INTO Exercise
+                                        (Name, Language)
+                                        VALUES ( @name, @language)";
+                    cmd.Parameters.Add(new SqlParameter("@name", exercise.Name));
+                    cmd.Parameters.Add(new SqlParameter("@language", exercise.Language));
+                    cmd.ExecuteNonQuery();
 
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
+                    return RedirectToAction(nameof(Index));
+                }
             }
         }
 
         // GET: Exercise/Edit/5
         public ActionResult Edit(int id)
         {
-            return View();
+            var exercise = GetExerciseById(id);
+            return View(exercise);
         }
 
         // POST: Exercise/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
+        public ActionResult Edit(int id, Exercise exercise)
         {
             try
             {
-                // TODO: Add update logic here
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = cmd.CommandText = @"Update Exercise 
+                                                              SET Name = @name,  
+                                                                  Language = @language 
+                                                              WHERE id = @id";
+                        cmd.Parameters.Add(new SqlParameter("@name", exercise.Name));
+                        cmd.Parameters.Add(new SqlParameter("@language", exercise.Language));
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
 
+                        cmd.ExecuteNonQuery();
+                    }
+                }
                 return RedirectToAction(nameof(Index));
             }
             catch
@@ -144,7 +164,8 @@ namespace StudentExercisesMVC.Controllers
         // GET: Exercise/Delete/5
         public ActionResult Delete(int id)
         {
-            return View();
+            var exercise = GetExerciseById(id);
+            return View(exercise);
         }
 
         // POST: Exercise/Delete/5
@@ -154,13 +175,55 @@ namespace StudentExercisesMVC.Controllers
         {
             try
             {
-                // TODO: Add delete logic here
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"
+                            DELETE FROM Exercise WHERE Id = @id";
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
 
+                        cmd.ExecuteNonQuery();
+                    }
+                }
                 return RedirectToAction(nameof(Index));
             }
             catch
             {
-                return View();
+                var exercise = GetExerciseById(id);
+                return View(exercise);
+            }
+        }
+        //helper private method
+        private Exercise GetExerciseById(int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"SELECT Id, Name, Language
+                                         FROM Exercise
+                                         WHERE Id = @id";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    Exercise exercise = null;
+                    if (reader.Read())
+                    {
+                        exercise = new Exercise()
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            Name = reader.GetString(reader.GetOrdinal("Name")),
+                            Language = reader.GetString(reader.GetOrdinal("Language")),
+                        };
+                    }
+
+                    reader.Close();
+                    return exercise;
+
+                }
             }
         }
     }
